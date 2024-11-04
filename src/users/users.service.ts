@@ -6,11 +6,10 @@ import {
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdatePasswordDto } from './dto/update-password.dto';
-import { IUser } from 'src/types/types';
-import { validate as uuidValidate } from 'uuid';
-import { v4 as uuidv4 } from 'uuid';
+import { validate as uuidValidate, v4 as uuidv4 } from 'uuid';
 import { plainToClass } from 'class-transformer';
 import { User } from './entities/user.entity';
+import { IUser } from './interfaces/user.interface';
 
 @Injectable()
 export class UsersService {
@@ -70,11 +69,10 @@ export class UsersService {
     }
   }
 
-  remove(id: string): User {
+  remove(id: string) {
     const user = this.findOne(id);
     if (user) {
       this.usersMap.delete(id);
-      return user;
     }
   }
 }
