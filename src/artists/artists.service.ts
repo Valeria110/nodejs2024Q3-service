@@ -1,15 +1,24 @@
 import {
   BadRequestException,
+  forwardRef,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { CreateArtistDto } from './dto/create-artist.dto';
 import { UpdateArtistDto } from './dto/update-artist.dto';
 import { validate as uuidValidate, v4 as uuidv4 } from 'uuid';
+import { TracksService } from 'src/tracks/tracks.service';
+import { ITrack } from 'src/tracks/interfaces/track.interface';
 
 @Injectable()
 export class ArtistsService {
   private artists: Map<string, IArtist> = new Map();
+
+  constructor(
+    @Inject(forwardRef(() => TracksService))
+    private readonly tracksService: TracksService,
+  ) {}
 
   findAll(): IArtist[] {
     return [...this.artists.values()];
@@ -45,6 +54,13 @@ export class ArtistsService {
     const artist = this.artists.get(id);
     if (artist) {
       this.artists.delete(id);
+      this.tracksService.findAll().forEach((track) => {
+        if (track.artistId === id) {
+          const updatedTrackData: ITrack = { ...track, artistId: null };
+          this.tracksService.update(track.id, updatedTrackData);
+          return;
+        }
+      });
     }
   }
 }

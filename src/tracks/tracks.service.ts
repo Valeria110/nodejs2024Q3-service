@@ -1,5 +1,7 @@
 import {
   BadRequestException,
+  forwardRef,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -13,7 +15,10 @@ import { ArtistsService } from 'src/artists/artists.service';
 export class TracksService {
   private tracks: Map<string, ITrack> = new Map();
 
-  constructor(private readonly artistsService: ArtistsService) {}
+  constructor(
+    @Inject(forwardRef(() => ArtistsService))
+    private readonly artistsService: ArtistsService,
+  ) {}
 
   findAll(): ITrack[] {
     return [...this.tracks.values()];
