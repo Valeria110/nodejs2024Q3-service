@@ -7,10 +7,13 @@ import { CreateTrackDto } from './dto/create-track.dto';
 import { UpdateTrackDto } from './dto/update-track.dto';
 import { ITrack } from './interfaces/track.interface';
 import { validate as uuidValidate, v4 as uuidv4 } from 'uuid';
+import { ArtistsService } from 'src/artists/artists.service';
 
 @Injectable()
 export class TracksService {
   private tracks: Map<string, ITrack> = new Map();
+
+  constructor(private readonly artistsService: ArtistsService) {}
 
   findAll(): ITrack[] {
     return [...this.tracks.values()];
@@ -31,9 +34,13 @@ export class TracksService {
   create(createTrackDto: CreateTrackDto): ITrack {
     // TODO:
     // check if artist and album with the provided ids exist and throw errors
-    const trackId = uuidv4();
-    this.tracks.set(trackId, { ...createTrackDto, id: trackId });
-    return this.tracks.get(trackId);
+    // const album = this.albumsService.findOne(createTrackDto.albumId);
+    const artist = this.artistsService.findOne(createTrackDto.artistId);
+    if (artist) {
+      const trackId = uuidv4();
+      this.tracks.set(trackId, { ...createTrackDto, id: trackId });
+      return this.tracks.get(trackId);
+    }
   }
 
   update(id: string, updateTrackDto: UpdateTrackDto): ITrack {
