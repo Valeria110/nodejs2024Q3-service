@@ -11,14 +11,18 @@ import { validate as uuidValidate, v4 as uuidv4 } from 'uuid';
 import { TracksService } from 'src/tracks/tracks.service';
 import { ITrack } from 'src/tracks/interfaces/track.interface';
 import { IArtist } from './interfaces/artist.interface';
+import { AlbumsService } from 'src/albums/albums.service';
+import { IAlbum } from 'src/albums/interfaces/album.interface';
 
 @Injectable()
 export class ArtistsService {
-  private artists: Map<string, IArtist> = new Map();
+  private artists = new Map<string, IArtist>();
 
   constructor(
     @Inject(forwardRef(() => TracksService))
     private readonly tracksService: TracksService,
+    @Inject(forwardRef(() => AlbumsService))
+    private readonly albumsService: AlbumsService,
   ) {}
 
   findAll(): IArtist[] {
@@ -55,10 +59,19 @@ export class ArtistsService {
     const artist = this.findOne(id);
     if (artist) {
       this.artists.delete(id);
+
       this.tracksService.findAll().forEach((track) => {
         if (track.artistId === id) {
           const updatedTrackData: ITrack = { ...track, artistId: null };
           this.tracksService.update(track.id, updatedTrackData);
+          return;
+        }
+      });
+
+      this.albumsService.findAll().forEach((album) => {
+        if (album.artistId === id) {
+          const updatedAlbumData: IAlbum = { ...album, artistId: null };
+          this.albumsService.update(album.id, updatedAlbumData);
           return;
         }
       });

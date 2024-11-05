@@ -11,14 +11,17 @@ import { ITrack } from './interfaces/track.interface';
 import { validate as uuidValidate, v4 as uuidv4 } from 'uuid';
 import { ArtistsService } from 'src/artists/artists.service';
 import { IArtist } from 'src/artists/interfaces/artist.interface';
+import { AlbumsService } from 'src/albums/albums.service';
 
 @Injectable()
 export class TracksService {
-  private tracks: Map<string, ITrack> = new Map();
+  private tracks = new Map<string, ITrack>();
 
   constructor(
     @Inject(forwardRef(() => ArtistsService))
     private readonly artistsService: ArtistsService,
+    @Inject(forwardRef(() => AlbumsService))
+    private readonly albumsService: AlbumsService,
   ) {}
 
   findAll(): ITrack[] {
@@ -38,14 +41,10 @@ export class TracksService {
   }
 
   create(createTrackDto: CreateTrackDto): ITrack {
-    // TODO:
-    // check also if an album with the provided id exists and throw errors
-    // const album = this.albumsService.findOne(createTrackDto.albumId);
-    let artist: IArtist | null = null;
-
-    if (createTrackDto.artistId) {
-      artist = this.artistsService.findOne(createTrackDto.artistId);
-    }
+    createTrackDto.artistId &&
+      this.artistsService.findOne(createTrackDto.artistId);
+    createTrackDto.albumId &&
+      this.albumsService.findOne(createTrackDto.albumId);
 
     const trackId = uuidv4();
     this.tracks.set(trackId, { ...createTrackDto, id: trackId });
@@ -55,8 +54,11 @@ export class TracksService {
   update(id: string, updateTrackDto: UpdateTrackDto): ITrack {
     const track = this.findOne(id);
     if (track) {
-      // TODO:
-      // check if artist and album with the provided ids exist and throw errors
+      updateTrackDto.artistId &&
+        this.artistsService.findOne(updateTrackDto.artistId);
+      updateTrackDto.albumId &&
+        this.albumsService.findOne(updateTrackDto.albumId);
+
       const updatedTrackData = { ...track, ...updateTrackDto };
       this.tracks.set(id, updatedTrackData);
       return updatedTrackData;
