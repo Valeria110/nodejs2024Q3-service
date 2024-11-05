@@ -10,6 +10,7 @@ import { UpdateArtistDto } from './dto/update-artist.dto';
 import { validate as uuidValidate, v4 as uuidv4 } from 'uuid';
 import { TracksService } from 'src/tracks/tracks.service';
 import { ITrack } from 'src/tracks/interfaces/track.interface';
+import { IArtist } from './interfaces/artist.interface';
 
 @Injectable()
 export class ArtistsService {
@@ -42,7 +43,7 @@ export class ArtistsService {
   }
 
   update(id: string, updateArtistDto: UpdateArtistDto) {
-    const artist = this.artists.get(id);
+    const artist = this.findOne(id);
     if (artist) {
       const updatedArtistData = { ...artist, ...updateArtistDto };
       this.artists.set(id, updatedArtistData);
@@ -51,7 +52,7 @@ export class ArtistsService {
   }
 
   remove(id: string) {
-    const artist = this.artists.get(id);
+    const artist = this.findOne(id);
     if (artist) {
       this.artists.delete(id);
       this.tracksService.findAll().forEach((track) => {
