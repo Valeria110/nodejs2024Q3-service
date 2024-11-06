@@ -12,6 +12,7 @@ import { validate as uuidValidate, v4 as uuidv4 } from 'uuid';
 import { ArtistsService } from 'src/artists/artists.service';
 import { TracksService } from 'src/tracks/tracks.service';
 import { ITrack } from 'src/tracks/interfaces/track.interface';
+import { FavoritesService } from 'src/favorites/favorites.service';
 
 @Injectable()
 export class AlbumsService {
@@ -22,6 +23,8 @@ export class AlbumsService {
     private readonly artistsService: ArtistsService,
     @Inject(forwardRef(() => TracksService))
     private readonly tracksService: TracksService,
+    @Inject(forwardRef(() => FavoritesService))
+    private readonly favoritesService: FavoritesService,
   ) {}
 
   findAll() {
@@ -63,13 +66,16 @@ export class AlbumsService {
   remove(id: string) {
     const album = this.findOne(id);
     if (album) {
-      this.albums.delete(id);
       this.tracksService.findAll().forEach((track) => {
         if (track.albumId === id) {
           const updatedTrackData: ITrack = { ...track, albumId: null };
           this.tracksService.update(track.id, updatedTrackData);
+
+          const favAlbum = this.favoritesService.findOneAlbum(id);
+          if (favAlbum) this.favoritesService.removeFavAlbum(id);
         }
       });
+      this.albums.delete(id);
     }
   }
 }

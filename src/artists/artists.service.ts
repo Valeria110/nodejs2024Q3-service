@@ -13,6 +13,7 @@ import { ITrack } from 'src/tracks/interfaces/track.interface';
 import { IArtist } from './interfaces/artist.interface';
 import { AlbumsService } from 'src/albums/albums.service';
 import { IAlbum } from 'src/albums/interfaces/album.interface';
+import { FavoritesService } from 'src/favorites/favorites.service';
 
 @Injectable()
 export class ArtistsService {
@@ -23,6 +24,8 @@ export class ArtistsService {
     private readonly tracksService: TracksService,
     @Inject(forwardRef(() => AlbumsService))
     private readonly albumsService: AlbumsService,
+    @Inject(forwardRef(() => FavoritesService))
+    private readonly favoritesService: FavoritesService,
   ) {}
 
   findAll(): IArtist[] {
@@ -58,8 +61,6 @@ export class ArtistsService {
   remove(id: string) {
     const artist = this.findOne(id);
     if (artist) {
-      this.artists.delete(id);
-
       this.tracksService.findAll().forEach((track) => {
         if (track.artistId === id) {
           const updatedTrackData: ITrack = { ...track, artistId: null };
@@ -75,6 +76,10 @@ export class ArtistsService {
           return;
         }
       });
+
+      const favArtist = this.favoritesService.findOneArtist(id);
+      if (favArtist) this.favoritesService.removeFavArtist(id);
+      this.artists.delete(id);
     }
   }
 }

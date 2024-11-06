@@ -29,11 +29,3 @@ export class CreateTrackDto {
   @IsNotEmpty()
   duration: number;
 }
-
-// JSON
-// {
-//     "name": "name",
-//     "artistId": null,
-//     "albumId": null,
-//     "duration": 180
-// }

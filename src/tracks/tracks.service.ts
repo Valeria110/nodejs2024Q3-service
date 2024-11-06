@@ -10,8 +10,8 @@ import { UpdateTrackDto } from './dto/update-track.dto';
 import { ITrack } from './interfaces/track.interface';
 import { validate as uuidValidate, v4 as uuidv4 } from 'uuid';
 import { ArtistsService } from 'src/artists/artists.service';
-import { IArtist } from 'src/artists/interfaces/artist.interface';
 import { AlbumsService } from 'src/albums/albums.service';
+import { FavoritesService } from 'src/favorites/favorites.service';
 
 @Injectable()
 export class TracksService {
@@ -22,6 +22,8 @@ export class TracksService {
     private readonly artistsService: ArtistsService,
     @Inject(forwardRef(() => AlbumsService))
     private readonly albumsService: AlbumsService,
+    @Inject(forwardRef(() => FavoritesService))
+    private readonly favoritesService: FavoritesService,
   ) {}
 
   findAll(): ITrack[] {
@@ -68,6 +70,8 @@ export class TracksService {
   remove(id: string) {
     const track = this.findOne(id);
     if (track) {
+      const favTrack = this.favoritesService.findOneTrack(id);
+      if (favTrack) this.favoritesService.removeFavTrack(id);
       this.tracks.delete(id);
     }
   }
