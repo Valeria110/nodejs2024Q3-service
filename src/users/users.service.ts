@@ -9,7 +9,6 @@ import { UpdatePasswordDto } from './dto/update-password.dto';
 import { validate as uuidValidate, v4 as uuidv4 } from 'uuid';
 import { plainToClass } from 'class-transformer';
 import { User } from './entities/user.entity';
-import { IUser } from './interfaces/user.interface';
 import { DbService } from 'src/db/db.service';
 
 @Injectable()
@@ -36,8 +35,8 @@ export class UsersService {
     return user;
   }
 
-  create(createUserDto: CreateUserDto) {
-    const newUser = this.dbService.user.create({
+  async create(createUserDto: CreateUserDto) {
+    const newUser = await this.dbService.user.create({
       data: createUserDto,
     });
 
