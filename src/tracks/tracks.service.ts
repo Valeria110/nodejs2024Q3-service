@@ -7,7 +7,6 @@ import {
 } from '@nestjs/common';
 import { CreateTrackDto } from './dto/create-track.dto';
 import { UpdateTrackDto } from './dto/update-track.dto';
-import { ITrack } from './interfaces/track.interface';
 import { validate as uuidValidate, v4 as uuidv4 } from 'uuid';
 import { ArtistsService } from 'src/artists/artists.service';
 import { AlbumsService } from 'src/albums/albums.service';
@@ -16,8 +15,6 @@ import { DbService } from 'src/db/db.service';
 
 @Injectable()
 export class TracksService {
-  private tracks = new Map<string, ITrack>();
-
   constructor(
     @Inject(forwardRef(() => ArtistsService))
     private readonly artistsService: ArtistsService,
@@ -48,7 +45,9 @@ export class TracksService {
 
   async create(createTrackDto: CreateTrackDto) {
     createTrackDto.artistId &&
-      this.artistsService.findOne(createTrackDto.artistId);
+      (await this.dbService.artist.findUnique({
+        where: { id: createTrackDto.artistId },
+      }));
     createTrackDto.albumId &&
       this.albumsService.findOne(createTrackDto.albumId);
 
@@ -59,7 +58,9 @@ export class TracksService {
     const track = await this.findOne(id);
     if (track) {
       updateTrackDto.artistId &&
-        this.artistsService.findOne(updateTrackDto.artistId);
+        (await this.dbService.artist.findUnique({
+          where: { id: updateTrackDto.artistId },
+        }));
       updateTrackDto.albumId &&
         this.albumsService.findOne(updateTrackDto.albumId);
 
