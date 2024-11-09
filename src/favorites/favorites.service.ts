@@ -1,19 +1,15 @@
 import {
   BadRequestException,
-  forwardRef,
-  Inject,
   Injectable,
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { IFavs } from './interfaces/favs.interface';
-import { ArtistsService } from 'src/artists/artists.service';
-import { TracksService } from 'src/tracks/tracks.service';
-import { AlbumsService } from 'src/albums/albums.service';
 import { validate as uuidValidate } from 'uuid';
 import { IArtist } from 'src/artists/interfaces/artist.interface';
 import { IAlbum } from 'src/albums/interfaces/album.interface';
 import { ITrack } from 'src/tracks/interfaces/track.interface';
+import { DbService } from 'src/db/db.service';
 
 @Injectable()
 export class FavoritesService {
@@ -26,14 +22,7 @@ export class FavoritesService {
     tracks: [],
   };
 
-  constructor(
-    @Inject(forwardRef(() => TracksService))
-    private readonly tracksService: TracksService,
-    @Inject(forwardRef(() => AlbumsService))
-    private readonly albumsService: AlbumsService,
-    @Inject(forwardRef(() => ArtistsService))
-    private readonly artistsService: ArtistsService,
-  ) {}
+  constructor(private readonly dbService: DbService) {}
 
   findAll() {
     return this.favs;
@@ -43,16 +32,19 @@ export class FavoritesService {
     return this.favTracks.get(trackId);
   }
 
-  createFavTrack(trackId: string) {
+  async createFavTrack(trackId: string) {
     if (!uuidValidate(trackId))
       throw new BadRequestException('Id is not a valid uuid');
-    if (!this.tracksService.findAll().some((track) => track.id === trackId)) {
+    const tracks = await this.dbService.track.findMany();
+    if (!tracks.some((track) => track.id === trackId)) {
       throw new UnprocessableEntityException(
         'Track with this id does not exist',
       );
     }
 
-    const track = this.tracksService.findOne(trackId);
+    const track = await this.dbService.track.findUnique({
+      where: { id: trackId },
+    });
     if (!this.favTracks.has(trackId)) {
       this.favTracks.set(trackId, track);
       this.favs.tracks = [...this.favTracks.values()];
@@ -76,16 +68,19 @@ export class FavoritesService {
     return this.favAlbums.get(albumId);
   }
 
-  createFavAlbum(albumId: string) {
+  async createFavAlbum(albumId: string) {
     if (!uuidValidate(albumId))
       throw new BadRequestException('Id is not a valid uuid');
-    if (!this.albumsService.findAll().some((album) => album.id === albumId)) {
+    const albums = await this.dbService.album.findMany();
+    if (!albums.some((album) => album.id === albumId)) {
       throw new UnprocessableEntityException(
         'Album with this id does not exist',
       );
     }
 
-    const album = this.albumsService.findOne(albumId);
+    const album = await this.dbService.album.findUnique({
+      where: { id: albumId },
+    });
     if (!this.favAlbums.has(albumId)) {
       this.favAlbums.set(albumId, album);
       this.favs.albums = [...this.favAlbums.values()];
@@ -109,18 +104,19 @@ export class FavoritesService {
     return this.favArtists.get(artistId);
   }
 
-  createFavArtist(artistId: string) {
+  async createFavArtist(artistId: string) {
     if (!uuidValidate(artistId))
       throw new BadRequestException('Id is not a valid uuid');
-    if (
-      !this.artistsService.findAll().some((artist) => artist.id === artistId)
-    ) {
+    const artists = await this.dbService.artist.findMany();
+    if (!artists.some((artist) => artist.id === artistId)) {
       throw new UnprocessableEntityException(
         'Artist with this id does not exist',
       );
     }
 
-    const artist = this.artistsService.findOne(artistId);
+    const artist = await this.dbService.artist.findUnique({
+      where: { id: artistId },
+    });
     if (!this.favArtists.has(artistId)) {
       this.favArtists.set(artistId, artist);
       this.favs.artists = [...this.favArtists.values()];

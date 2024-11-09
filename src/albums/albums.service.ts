@@ -7,75 +7,63 @@ import {
 } from '@nestjs/common';
 import { CreateAlbumDto } from './dto/create-album.dto';
 import { UpdateAlbumDto } from './dto/update-album.dto';
-import { IAlbum } from './interfaces/album.interface';
-import { validate as uuidValidate, v4 as uuidv4 } from 'uuid';
-import { ArtistsService } from 'src/artists/artists.service';
-import { TracksService } from 'src/tracks/tracks.service';
-import { ITrack } from 'src/tracks/interfaces/track.interface';
+import { validate as uuidValidate } from 'uuid';
 import { FavoritesService } from 'src/favorites/favorites.service';
+import { DbService } from 'src/db/db.service';
 
 @Injectable()
 export class AlbumsService {
-  private albums = new Map<string, IAlbum>();
-
   constructor(
-    @Inject(forwardRef(() => ArtistsService))
-    private readonly artistsService: ArtistsService,
-    @Inject(forwardRef(() => TracksService))
-    private readonly tracksService: TracksService,
     @Inject(forwardRef(() => FavoritesService))
     private readonly favoritesService: FavoritesService,
+    private readonly dbService: DbService,
   ) {}
 
-  findAll() {
-    return [...this.albums.values()];
+  async findAll() {
+    return await this.dbService.album.findMany();
   }
 
-  findOne(id: string) {
+  async findOne(id: string) {
     if (!uuidValidate(id)) {
       throw new BadRequestException('Id is not a valid uuid');
     }
-    const album = this.albums.get(id);
+    const album = await this.dbService.album.findUnique({ where: { id } });
     if (!album) {
       throw new NotFoundException('Album with this id does not exist');
     }
     return album;
   }
 
-  create(createAlbumDto: CreateAlbumDto) {
+  async create(createAlbumDto: CreateAlbumDto) {
     createAlbumDto.artistId &&
-      this.artistsService.findOne(createAlbumDto.artistId);
+      (await this.dbService.artist.findUnique({
+        where: { id: createAlbumDto.artistId },
+      }));
 
-    const albumData: IAlbum = { id: uuidv4(), ...createAlbumDto };
-    this.albums.set(albumData.id, albumData);
-    return albumData;
+    return await this.dbService.album.create({ data: createAlbumDto });
   }
 
-  update(id: string, updateAlbumDto: UpdateAlbumDto) {
-    const album = this.findOne(id);
+  async update(id: string, updateAlbumDto: UpdateAlbumDto) {
+    const album = await this.findOne(id);
     if (album) {
       updateAlbumDto.artistId &&
-        this.artistsService.findOne(updateAlbumDto.artistId);
-      const updatedAlbumData = { ...album, ...updateAlbumDto };
-      this.albums.set(id, updatedAlbumData);
-
-      return updatedAlbumData;
+        (await this.dbService.artist.findUnique({
+          where: { id: updateAlbumDto.artistId },
+        }));
+      return await this.dbService.album.update({
+        where: { id },
+        data: updateAlbumDto,
+      });
     }
   }
 
-  remove(id: string) {
-    const album = this.findOne(id);
+  async remove(id: string) {
+    const album = await this.findOne(id);
     if (album) {
-      this.tracksService.findAll().forEach((track) => {
-        if (track.albumId === id) {
-          const updatedTrackData: ITrack = { ...track, albumId: null };
-          this.tracksService.update(track.id, updatedTrackData);
+      const favAlbum = this.favoritesService.findOneAlbum(id);
+      if (favAlbum) this.favoritesService.removeFavAlbum(id);
 
-          const favAlbum = this.favoritesService.findOneAlbum(id);
-          if (favAlbum) this.favoritesService.removeFavAlbum(id);
-        }
-      });
-      this.albums.delete(id);
+      return await this.dbService.album.delete({ where: { id } });
     }
   }
 }

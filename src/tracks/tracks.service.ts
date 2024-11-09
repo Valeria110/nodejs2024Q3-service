@@ -7,19 +7,13 @@ import {
 } from '@nestjs/common';
 import { CreateTrackDto } from './dto/create-track.dto';
 import { UpdateTrackDto } from './dto/update-track.dto';
-import { validate as uuidValidate, v4 as uuidv4 } from 'uuid';
-import { ArtistsService } from 'src/artists/artists.service';
-import { AlbumsService } from 'src/albums/albums.service';
+import { validate as uuidValidate } from 'uuid';
 import { FavoritesService } from 'src/favorites/favorites.service';
 import { DbService } from 'src/db/db.service';
 
 @Injectable()
 export class TracksService {
   constructor(
-    @Inject(forwardRef(() => ArtistsService))
-    private readonly artistsService: ArtistsService,
-    @Inject(forwardRef(() => AlbumsService))
-    private readonly albumsService: AlbumsService,
     @Inject(forwardRef(() => FavoritesService))
     private readonly favoritesService: FavoritesService,
     private readonly dbService: DbService,
@@ -48,8 +42,11 @@ export class TracksService {
       (await this.dbService.artist.findUnique({
         where: { id: createTrackDto.artistId },
       }));
+
     createTrackDto.albumId &&
-      this.albumsService.findOne(createTrackDto.albumId);
+      (await this.dbService.album.findUnique({
+        where: { id: createTrackDto.albumId },
+      }));
 
     return await this.dbService.track.create({ data: createTrackDto });
   }
@@ -61,8 +58,11 @@ export class TracksService {
         (await this.dbService.artist.findUnique({
           where: { id: updateTrackDto.artistId },
         }));
+
       updateTrackDto.albumId &&
-        this.albumsService.findOne(updateTrackDto.albumId);
+        (await this.dbService.album.findUnique({
+          where: { id: updateTrackDto.albumId },
+        }));
 
       return await this.dbService.track.update({
         where: { id },
