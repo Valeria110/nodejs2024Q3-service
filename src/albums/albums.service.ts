@@ -1,23 +1,16 @@
 import {
   BadRequestException,
-  forwardRef,
-  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { CreateAlbumDto } from './dto/create-album.dto';
 import { UpdateAlbumDto } from './dto/update-album.dto';
 import { validate as uuidValidate } from 'uuid';
-import { FavoritesService } from 'src/favorites/favorites.service';
 import { DbService } from 'src/db/db.service';
 
 @Injectable()
 export class AlbumsService {
-  constructor(
-    @Inject(forwardRef(() => FavoritesService))
-    private readonly favoritesService: FavoritesService,
-    private readonly dbService: DbService,
-  ) {}
+  constructor(private readonly dbService: DbService) {}
 
   async findAll() {
     return await this.dbService.album.findMany();
@@ -60,9 +53,6 @@ export class AlbumsService {
   async remove(id: string) {
     const album = await this.findOne(id);
     if (album) {
-      const favAlbum = this.favoritesService.findOneAlbum(id);
-      if (favAlbum) this.favoritesService.removeFavAlbum(id);
-
       return await this.dbService.album.delete({ where: { id } });
     }
   }

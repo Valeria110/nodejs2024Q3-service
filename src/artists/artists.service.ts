@@ -1,23 +1,16 @@
 import {
   BadRequestException,
-  forwardRef,
-  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { CreateArtistDto } from './dto/create-artist.dto';
 import { UpdateArtistDto } from './dto/update-artist.dto';
 import { validate as uuidValidate } from 'uuid';
-import { FavoritesService } from 'src/favorites/favorites.service';
 import { DbService } from 'src/db/db.service';
 
 @Injectable()
 export class ArtistsService {
-  constructor(
-    @Inject(forwardRef(() => FavoritesService))
-    private readonly favoritesService: FavoritesService,
-    private readonly dbService: DbService,
-  ) {}
+  constructor(private readonly dbService: DbService) {}
 
   async findAll() {
     return await this.dbService.artist.findMany();
@@ -51,9 +44,6 @@ export class ArtistsService {
   async remove(id: string) {
     const artist = await this.findOne(id);
     if (artist) {
-      const favArtist = this.favoritesService.findOneArtist(id);
-      if (favArtist) this.favoritesService.removeFavArtist(id);
-
       return await this.dbService.artist.delete({ where: { id } });
     }
   }
