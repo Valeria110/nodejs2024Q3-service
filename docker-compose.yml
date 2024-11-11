@@ -1,0 +1,51 @@
+version: '3.8'
+services:
+  app:
+    container_name: home-library-app
+    image: valeria110/home-library-app
+    build:
+      dockerfile: Dockerfile
+      context: .
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql://home-library-db_owner:1d2YLEVZAMUn@ep-late-sky-a5jazpy5-pooler.us-east-2.aws.neon.tech/home-library-db?sslmode=require
+    volumes:
+      - .:/usr/app
+    ports:
+      - 4000:4000
+      - 9229:9229
+    depends_on:
+      - postgres
+    networks:
+      - home-library-network
+    restart: always
+
+  postgres:
+    container_name: home-library-db
+    image: valeria110/home-library-db
+    build:
+      dockerfile: Dockerfile
+      context: ./prisma
+    restart: always
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: home-library-db_owner
+      POSTGRES_PASSWORD: 1d2YLEVZAMUn
+      POSTGRES_DB: home-library-db
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+    networks:
+      - home-library-network
+    command: ['-c', 'ssl=off']
+
+volumes:
+  pgdata:
+
+networks:
+  home-library-network:
+    driver: bridge

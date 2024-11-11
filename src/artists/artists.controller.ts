@@ -32,7 +32,10 @@ export class ArtistsController {
   }
 
   @Put(':id')
-  async update(@Param('id') id: string, @Body() updateArtistDto: UpdateArtistDto) {
+  async update(
+    @Param('id') id: string,
+    @Body() updateArtistDto: UpdateArtistDto,
+  ) {
     return await this.artistsService.update(id, updateArtistDto);
   }
 
