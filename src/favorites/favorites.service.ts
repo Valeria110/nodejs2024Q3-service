@@ -1,140 +1,152 @@
 import {
   BadRequestException,
-  forwardRef,
-  Inject,
   Injectable,
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { IFavs } from './interfaces/favs.interface';
-import { ArtistsService } from 'src/artists/artists.service';
-import { TracksService } from 'src/tracks/tracks.service';
-import { AlbumsService } from 'src/albums/albums.service';
 import { validate as uuidValidate } from 'uuid';
-import { IArtist } from 'src/artists/interfaces/artist.interface';
-import { IAlbum } from 'src/albums/interfaces/album.interface';
-import { ITrack } from 'src/tracks/interfaces/track.interface';
+import { DbService } from 'src/db/db.service';
 
 @Injectable()
 export class FavoritesService {
-  private favArtists = new Map<string, IArtist>();
-  private favAlbums = new Map<string, IAlbum>();
-  private favTracks = new Map<string, ITrack>();
-  private favs: IFavs = {
-    artists: [],
-    albums: [],
-    tracks: [],
-  };
+  constructor(private readonly dbService: DbService) {}
 
-  constructor(
-    @Inject(forwardRef(() => TracksService))
-    private readonly tracksService: TracksService,
-    @Inject(forwardRef(() => AlbumsService))
-    private readonly albumsService: AlbumsService,
-    @Inject(forwardRef(() => ArtistsService))
-    private readonly artistsService: ArtistsService,
-  ) {}
+  async findAll() {
+    const [favTracks, favArtists, favAlbums] = await Promise.all([
+      this.dbService.favTrack.findMany({ select: { track: true } }),
+      this.dbService.favArtist.findMany({ select: { artist: true } }),
+      this.dbService.favAlbum.findMany({ select: { album: true } }),
+    ]);
 
-  findAll() {
-    return this.favs;
+    return {
+      tracks: favTracks.map(({ track }) => track),
+      artists: favArtists.map(({ artist }) => artist),
+      albums: favAlbums.map(({ album }) => album),
+    };
   }
 
-  findOneTrack(trackId: string) {
-    return this.favTracks.get(trackId);
+  async findOneTrack(trackId: string) {
+    return await this.dbService.favTrack.findUnique({
+      where: { trackId },
+    });
   }
 
-  createFavTrack(trackId: string) {
+  async createFavTrack(trackId: string) {
     if (!uuidValidate(trackId))
       throw new BadRequestException('Id is not a valid uuid');
-    if (!this.tracksService.findAll().some((track) => track.id === trackId)) {
+
+    const track = await this.dbService.track.findUnique({
+      where: { id: trackId },
+    });
+
+    if (!track) {
       throw new UnprocessableEntityException(
         'Track with this id does not exist',
       );
     }
-
-    const track = this.tracksService.findOne(trackId);
-    if (!this.favTracks.has(trackId)) {
-      this.favTracks.set(trackId, track);
-      this.favs.tracks = [...this.favTracks.values()];
-      return this.favs.tracks;
+    const favTrack = await this.findOneTrack(trackId);
+    if (!favTrack) {
+      return await this.dbService.favTrack.create({
+        data: { trackId },
+      });
     }
   }
 
-  removeFavTrack(trackId: string) {
+  async removeFavTrack(trackId: string) {
     if (!uuidValidate(trackId))
       throw new BadRequestException('Id is not a valid uuid');
+    const favTrack = await this.dbService.favTrack.findUnique({
+      where: { trackId },
+    });
 
-    if (this.favTracks.has(trackId)) {
-      this.favTracks.delete(trackId);
-      this.favs.tracks = [...this.favTracks.values()];
+    if (favTrack) {
+      return await this.dbService.favTrack.delete({ where: { trackId } });
     } else {
       throw new NotFoundException('Track with this id is not favorite');
     }
   }
 
-  findOneAlbum(albumId: string) {
-    return this.favAlbums.get(albumId);
+  async findOneAlbum(albumId: string) {
+    return await this.dbService.favAlbum.findUnique({
+      where: { albumId },
+    });
   }
 
-  createFavAlbum(albumId: string) {
+  async createFavAlbum(albumId: string) {
     if (!uuidValidate(albumId))
       throw new BadRequestException('Id is not a valid uuid');
-    if (!this.albumsService.findAll().some((album) => album.id === albumId)) {
+
+    const album = await this.dbService.album.findUnique({
+      where: { id: albumId },
+    });
+
+    if (!album) {
       throw new UnprocessableEntityException(
         'Album with this id does not exist',
       );
     }
 
-    const album = this.albumsService.findOne(albumId);
-    if (!this.favAlbums.has(albumId)) {
-      this.favAlbums.set(albumId, album);
-      this.favs.albums = [...this.favAlbums.values()];
-      return this.favs.albums;
+    const favAlbum = await this.findOneAlbum(albumId);
+    if (!favAlbum) {
+      return await this.dbService.favAlbum.create({
+        data: { albumId },
+      });
     }
   }
 
-  removeFavAlbum(albumId: string) {
+  async removeFavAlbum(albumId: string) {
     if (!uuidValidate(albumId))
       throw new BadRequestException('Id is not a valid uuid');
 
-    if (this.favAlbums.has(albumId)) {
-      this.favAlbums.delete(albumId);
-      this.favs.albums = [...this.favAlbums.values()];
+    const favAlbum = await this.dbService.favAlbum.findUnique({
+      where: { albumId },
+    });
+
+    if (favAlbum) {
+      return await this.dbService.favAlbum.delete({ where: { albumId } });
     } else {
       throw new NotFoundException('Album with this id is not favorite');
     }
   }
 
-  findOneArtist(artistId: string) {
-    return this.favArtists.get(artistId);
+  async findOneArtist(artistId: string) {
+    return await this.dbService.favArtist.findUnique({
+      where: { artistId },
+    });
   }
 
-  createFavArtist(artistId: string) {
+  async createFavArtist(artistId: string) {
     if (!uuidValidate(artistId))
       throw new BadRequestException('Id is not a valid uuid');
-    if (
-      !this.artistsService.findAll().some((artist) => artist.id === artistId)
-    ) {
+
+    const artist = await this.dbService.artist.findUnique({
+      where: { id: artistId },
+    });
+
+    if (!artist) {
       throw new UnprocessableEntityException(
         'Artist with this id does not exist',
       );
     }
 
-    const artist = this.artistsService.findOne(artistId);
-    if (!this.favArtists.has(artistId)) {
-      this.favArtists.set(artistId, artist);
-      this.favs.artists = [...this.favArtists.values()];
-      return this.favs.artists;
+    const favArtist = await this.findOneArtist(artistId);
+    if (!favArtist) {
+      return await this.dbService.favArtist.create({
+        data: { artistId },
+      });
     }
   }
 
-  removeFavArtist(artistId: string) {
+  async removeFavArtist(artistId: string) {
     if (!uuidValidate(artistId))
       throw new BadRequestException('Id is not a valid uuid');
 
-    if (this.favArtists.has(artistId)) {
-      this.favArtists.delete(artistId);
-      this.favs.artists = [...this.favArtists.values()];
+    const favArtist = await this.dbService.favArtist.findUnique({
+      where: { artistId },
+    });
+
+    if (favArtist) {
+      return await this.dbService.favArtist.delete({ where: { artistId } });
     } else {
       throw new NotFoundException('Album with this id is not favorite');
     }

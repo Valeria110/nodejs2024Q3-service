@@ -1,40 +1,28 @@
 import {
   BadRequestException,
-  forwardRef,
-  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { CreateTrackDto } from './dto/create-track.dto';
 import { UpdateTrackDto } from './dto/update-track.dto';
-import { ITrack } from './interfaces/track.interface';
-import { validate as uuidValidate, v4 as uuidv4 } from 'uuid';
-import { ArtistsService } from 'src/artists/artists.service';
-import { AlbumsService } from 'src/albums/albums.service';
-import { FavoritesService } from 'src/favorites/favorites.service';
+import { validate as uuidValidate } from 'uuid';
+import { DbService } from 'src/db/db.service';
 
 @Injectable()
 export class TracksService {
-  private tracks = new Map<string, ITrack>();
+  constructor(private readonly dbService: DbService) {}
 
-  constructor(
-    @Inject(forwardRef(() => ArtistsService))
-    private readonly artistsService: ArtistsService,
-    @Inject(forwardRef(() => AlbumsService))
-    private readonly albumsService: AlbumsService,
-    @Inject(forwardRef(() => FavoritesService))
-    private readonly favoritesService: FavoritesService,
-  ) {}
-
-  findAll(): ITrack[] {
-    return [...this.tracks.values()];
+  async findAll() {
+    return await this.dbService.track.findMany();
   }
 
-  findOne(id: string): ITrack {
+  async findOne(id: string) {
     if (!uuidValidate(id)) {
       throw new BadRequestException('Id is not a valid uuid');
     }
-    const track = this.tracks.get(id);
+    const track = await this.dbService.track.findUnique({
+      where: { id },
+    });
     if (!track) {
       throw new NotFoundException('Track with this id does not exist');
     }
@@ -42,37 +30,44 @@ export class TracksService {
     return track;
   }
 
-  create(createTrackDto: CreateTrackDto): ITrack {
+  async create(createTrackDto: CreateTrackDto) {
     createTrackDto.artistId &&
-      this.artistsService.findOne(createTrackDto.artistId);
-    createTrackDto.albumId &&
-      this.albumsService.findOne(createTrackDto.albumId);
+      (await this.dbService.artist.findUnique({
+        where: { id: createTrackDto.artistId },
+      }));
 
-    const trackId = uuidv4();
-    this.tracks.set(trackId, { ...createTrackDto, id: trackId });
-    return this.tracks.get(trackId);
+    createTrackDto.albumId &&
+      (await this.dbService.album.findUnique({
+        where: { id: createTrackDto.albumId },
+      }));
+
+    return await this.dbService.track.create({ data: createTrackDto });
   }
 
-  update(id: string, updateTrackDto: UpdateTrackDto): ITrack {
-    const track = this.findOne(id);
+  async update(id: string, updateTrackDto: UpdateTrackDto) {
+    const track = await this.findOne(id);
     if (track) {
       updateTrackDto.artistId &&
-        this.artistsService.findOne(updateTrackDto.artistId);
-      updateTrackDto.albumId &&
-        this.albumsService.findOne(updateTrackDto.albumId);
+        (await this.dbService.artist.findUnique({
+          where: { id: updateTrackDto.artistId },
+        }));
 
-      const updatedTrackData = { ...track, ...updateTrackDto };
-      this.tracks.set(id, updatedTrackData);
-      return updatedTrackData;
+      updateTrackDto.albumId &&
+        (await this.dbService.album.findUnique({
+          where: { id: updateTrackDto.albumId },
+        }));
+
+      return await this.dbService.track.update({
+        where: { id },
+        data: updateTrackDto,
+      });
     }
   }
 
-  remove(id: string) {
-    const track = this.findOne(id);
+  async remove(id: string) {
+    const track = await this.findOne(id);
     if (track) {
-      const favTrack = this.favoritesService.findOneTrack(id);
-      if (favTrack) this.favoritesService.removeFavTrack(id);
-      this.tracks.delete(id);
+      return await this.dbService.track.delete({ where: { id } });
     }
   }
 }

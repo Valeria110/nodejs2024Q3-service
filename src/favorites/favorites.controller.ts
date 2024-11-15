@@ -6,55 +6,55 @@ export class FavoritesController {
   constructor(private readonly favoritesService: FavoritesService) {}
 
   @Get()
-  findAll() {
-    return this.favoritesService.findAll();
+  async findAll() {
+    return await this.favoritesService.findAll();
   }
 
   @Get('track/:id')
-  findOneTrack(@Param('id') id: string) {
-    return this.favoritesService.findOneTrack(id);
+  async findOneTrack(@Param('id') id: string) {
+    return await this.favoritesService.findOneTrack(id);
   }
 
   @Post('track/:id')
-  createFavTrack(@Param('id') id: string) {
-    return this.favoritesService.createFavTrack(id);
+  async createFavTrack(@Param('id') id: string) {
+    return await this.favoritesService.createFavTrack(id);
   }
 
   @HttpCode(204)
   @Delete('track/:id')
-  removeFavTrack(@Param('id') id: string) {
-    return this.favoritesService.removeFavTrack(id);
+  async removeFavTrack(@Param('id') id: string) {
+    return await this.favoritesService.removeFavTrack(id);
   }
 
   @Get('album/:id')
-  findOneAlbum(@Param('id') id: string) {
-    return this.favoritesService.findOneAlbum(id);
+  async findOneAlbum(@Param('id') id: string) {
+    return await this.favoritesService.findOneAlbum(id);
   }
 
   @Post('album/:id')
-  createFavAlbum(@Param('id') id: string) {
-    return this.favoritesService.createFavAlbum(id);
+  async createFavAlbum(@Param('id') id: string) {
+    return await this.favoritesService.createFavAlbum(id);
   }
 
   @HttpCode(204)
   @Delete('album/:id')
-  removeFavAlbum(@Param('id') id: string) {
-    return this.favoritesService.removeFavAlbum(id);
+  async removeFavAlbum(@Param('id') id: string) {
+    return await this.favoritesService.removeFavAlbum(id);
   }
 
   @Get('artist/:id')
-  findOneArtist(@Param('id') id: string) {
-    return this.favoritesService.findOneArtist(id);
+  async findOneArtist(@Param('id') id: string) {
+    return await this.favoritesService.findOneArtist(id);
   }
 
   @Post('artist/:id')
-  createFavArtist(@Param('id') id: string) {
-    return this.favoritesService.createFavArtist(id);
+  async createFavArtist(@Param('id') id: string) {
+    return await this.favoritesService.createFavArtist(id);
   }
 
   @HttpCode(204)
   @Delete('artist/:id')
-  removeFavArtist(@Param('id') id: string) {
-    return this.favoritesService.removeFavArtist(id);
+  async removeFavArtist(@Param('id') id: string) {
+    return await this.favoritesService.removeFavArtist(id);
   }
 }

@@ -1,4 +1,4 @@
-import { Exclude } from 'class-transformer';
+import { Exclude, Transform } from 'class-transformer';
 
 export class User {
   id: string;
@@ -8,6 +8,10 @@ export class User {
   password: string;
 
   version: number;
+
+  @Transform(({ value }) => new Date(value).getTime())
   createdAt: number;
+
+  @Transform(({ value }) => new Date(value).getTime())
   updatedAt: number;
 }

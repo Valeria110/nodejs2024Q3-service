@@ -5,7 +5,7 @@ Welcome to a Home Library Service! `Users` can create, read, update, delete data
 ### Prerequisites
 
 - Git - [Download & Install Git](https://git-scm.com/downloads).
-- Node.js - [Download & Install Node.js](https://nodejs.org/en/download/) and the npm package manager.
+- Node.js - [Download & Install Node.js](https://nodejs.org/en/download/) and the npm package manager. **(Use 22.x.x version (22.9.0 or upper) of Node.js)**
 
 ### Downloading
 
@@ -20,13 +20,18 @@ npm install
 ```
 
 ### .env configuration
-Create an .env file with PORT (port on which the server will run; the default value - 4000). The example is provided in the .env.example file.
+Create an .env file with PORT (port on which the server will run; the default value - 4000) based on the .env.example file.
 
 
 ### Running application
-
+1) Open the Docker Desktop
+2) Create images and run Docker containers with the command: 
 ```
-npm start
+docker-compose up
+```
+To know more details about images, run the command: 
+```
+docker images
 ```
 
 After starting the app on port (4000 as default) you can open
