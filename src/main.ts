@@ -6,6 +6,8 @@ import { SwaggerModule } from '@nestjs/swagger';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { parse } from 'yaml';
+import { LoggingInterceptor } from './custom-logger/logging.interceptor';
+import { LoggingService } from './custom-logger/logging.service';
 
 const PORT = Number(process.env.PORT) || 4000;
 
@@ -20,6 +22,7 @@ async function bootstrap() {
   console.log('dirname: ', __dirname);
 
   app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalInterceptors(new LoggingInterceptor(new LoggingService()));
   await app.listen(PORT);
 }
 bootstrap();
