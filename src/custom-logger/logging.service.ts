@@ -15,6 +15,7 @@ export class LoggingService {
           'Uncaught exception: ' +
           (err instanceof Error ? err.message : JSON.stringify(err));
         this.logError(errMessage);
+        err instanceof Error && this.debugError(`\n Error stack: ${err.stack}`);
       }
     });
 
@@ -24,6 +25,7 @@ export class LoggingService {
           'Unhandled rejection: ' +
           (err instanceof Error ? err.message : JSON.stringify(err));
         this.logError(errMessage);
+        err instanceof Error && this.debugError(`\n Error stack: ${err.stack}`);
       }
     });
   }
@@ -42,9 +44,11 @@ export class LoggingService {
     }
   }
 
-  logError(error: any) {
+  logError(err: unknown) {
     if (this.isLogLevel('ERROR')) {
-      this.logger.error(`Error: ${error.message}`, error.stack);
+      const errMessage =
+        err instanceof Error ? `Error: ${err.message}` : JSON.stringify(err);
+      this.logger.error(errMessage, err instanceof Error && err.stack);
     }
   }
 
@@ -61,6 +65,12 @@ export class LoggingService {
   }
 
   debugResponse(message: string) {
+    if (this.isLogLevel('DEBUG')) {
+      this.logger.debug(message);
+    }
+  }
+
+  debugError(message: string) {
     if (this.isLogLevel('DEBUG')) {
       this.logger.debug(message);
     }
