@@ -23,10 +23,7 @@ services:
 
   postgres:
     container_name: home-library-db
-    image: valeria110/home-library-db
-    build:
-      dockerfile: Dockerfile
-      context: ./prisma
+    image: postgres:13
     restart: always
     env_file:
       - .env
