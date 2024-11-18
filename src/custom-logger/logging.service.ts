@@ -138,8 +138,20 @@ export class LoggingService {
   private async isLogsDirExist() {
     try {
       await fs.mkdir(this.logDirPath, { recursive: true });
+      await this.createLogFileIfNotExists();
     } catch (err) {
       this.logError(err);
+    }
+  }
+
+  private async createLogFileIfNotExists() {
+    await this.isLogsDirExist();
+
+    try {
+      await fs.access(this.logFilePath);
+      this.logError('File app.log already exists');
+    } catch (err) {
+      await fs.writeFile(this.logFilePath, '', { flag: 'wx' });
     }
   }
 }
