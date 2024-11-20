@@ -78,7 +78,7 @@ export class UsersService {
     }
   }
 
-  private async hashPassword(password: string) {
+  async hashPassword(password: string) {
     const salt = Number(process.env.CRYPT_SALT) || 10;
     const hashedPassword = await bcrypt.hash(password, salt);
     return hashedPassword;

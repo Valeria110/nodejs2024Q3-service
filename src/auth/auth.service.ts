@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { DbService } from 'src/db/db.service';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
@@ -11,6 +12,11 @@ import { JwtService } from '@nestjs/jwt';
 import { LoginUserDto } from './dto/login.dto';
 import { plainToClass } from 'class-transformer';
 import { User } from 'src/users/entities/user.entity';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
+import {
+  accessTokenConfig,
+  refreshTokenConfig,
+} from './tokens-config/tokens-config';
 
 @Injectable()
 export class AuthService {
@@ -27,9 +33,18 @@ export class AuthService {
     if (user) {
       throw new BadRequestException('User with this login already exists');
     }
+    return await this.createNewUSer(createUserDto);
+  }
 
-    const newUser = await this.usersService.create(createUserDto);
-    return await this.generateToken(newUser);
+  private async createNewUSer(createUserDto: CreateUserDto) {
+    const newUser = await this.dbService.user.create({
+      data: {
+        ...createUserDto,
+        password: await this.usersService.hashPassword(createUserDto.password),
+      },
+    });
+
+    return plainToClass(User, newUser);
   }
 
   async login(loginUserDto: LoginUserDto) {
@@ -41,7 +56,12 @@ export class AuthService {
 
   private async generateToken(userDto: User) {
     const tokenPayload = { userId: userDto.id, login: userDto.login };
-    return { token: await this.jwtService.signAsync(tokenPayload) };
+    const [accessToken, refreshToken] = await Promise.all([
+      this.jwtService.signAsync(tokenPayload, accessTokenConfig),
+      this.jwtService.signAsync(tokenPayload, refreshTokenConfig),
+      ,
+    ]);
+    return { accessToken, refreshToken, id: userDto.id };
   }
 
   private async isUserExist(login: string) {
@@ -62,5 +82,24 @@ export class AuthService {
       throw new ForbiddenException('Password is incorrect');
     }
     return isPasswordEqual;
+  }
+
+  async refreshToken(refreshToken: string) {
+    if (!refreshToken) {
+      throw new UnauthorizedException('Old refresh token should be provided');
+    }
+
+    try {
+      const { userId } = await this.jwtService.verifyAsync(
+        refreshToken,
+        refreshTokenConfig,
+      );
+      const user = await this.dbService.user.findUnique({
+        where: { id: userId },
+      });
+      return await this.generateToken(plainToClass(User, user));
+    } catch (err) {
+      throw new ForbiddenException('Refresh token is invalid or expired');
+    }
   }
 }
