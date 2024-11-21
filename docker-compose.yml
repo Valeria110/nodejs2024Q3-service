@@ -12,6 +12,7 @@ services:
       - DATABASE_URL=postgresql://home-library-db_owner:1d2YLEVZAMUn@ep-late-sky-a5jazpy5-pooler.us-east-2.aws.neon.tech/home-library-db?sslmode=require
     volumes:
       - .:/usr/app
+      - /usr/app/node_modules
     ports:
       - 4000:4000
       - 9229:9229
