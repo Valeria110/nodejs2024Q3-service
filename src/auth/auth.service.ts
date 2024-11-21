@@ -12,7 +12,6 @@ import { JwtService } from '@nestjs/jwt';
 import { LoginUserDto } from './dto/login.dto';
 import { plainToClass } from 'class-transformer';
 import { User } from 'src/users/entities/user.entity';
-import { RefreshTokenDto } from './dto/refresh-token.dto';
 import {
   accessTokenConfig,
   refreshTokenConfig,
