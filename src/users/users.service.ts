@@ -10,6 +10,7 @@ import { validate as uuidValidate } from 'uuid';
 import { plainToClass } from 'class-transformer';
 import { User } from './entities/user.entity';
 import { DbService } from 'src/db/db.service';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
@@ -37,7 +38,10 @@ export class UsersService {
 
   async create(createUserDto: CreateUserDto) {
     const newUser = await this.dbService.user.create({
-      data: createUserDto,
+      data: {
+        ...createUserDto,
+        password: await this.hashPassword(createUserDto.password),
+      },
     });
 
     return plainToClass(User, newUser);
@@ -46,21 +50,22 @@ export class UsersService {
   async update(id: string, updatePasswordDto: UpdatePasswordDto) {
     const user = await this.findOne(id);
     if (user) {
-      const userStoredPassword = user.password;
+      const isPasswordEqual = await this.isPasswordMatch(
+        updatePasswordDto.oldPassword,
+        user.password,
+      );
 
-      if (updatePasswordDto.oldPassword !== userStoredPassword) {
-        throw new ForbiddenException('Wrong old password');
+      if (isPasswordEqual) {
+        const updatedUser = this.dbService.user.update({
+          where: { id },
+          data: {
+            password: await this.hashPassword(updatePasswordDto.newPassword),
+            version: user.version + 1,
+          },
+        });
+
+        return plainToClass(User, updatedUser);
       }
-
-      const updatedUser = this.dbService.user.update({
-        where: { id },
-        data: {
-          password: updatePasswordDto.newPassword,
-          version: user.version + 1,
-        },
-      });
-
-      return plainToClass(User, updatedUser);
     }
   }
 
@@ -71,5 +76,19 @@ export class UsersService {
         where: { id },
       });
     }
+  }
+
+  async hashPassword(password: string) {
+    const salt = Number(process.env.CRYPT_SALT) || 10;
+    const hashedPassword = await bcrypt.hash(password, salt);
+    return hashedPassword;
+  }
+
+  private async isPasswordMatch(password: string, passwordFromDb: string) {
+    const isPasswordEqual = await bcrypt.compare(password, passwordFromDb);
+    if (!isPasswordEqual) {
+      throw new ForbiddenException('Old password is incorrect');
+    }
+    return isPasswordEqual;
   }
 }

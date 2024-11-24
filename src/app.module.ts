@@ -7,6 +7,8 @@ import { ArtistsModule } from './artists/artists.module';
 import { AlbumsModule } from './albums/albums.module';
 import { FavoritesModule } from './favorites/favorites.module';
 import { DbModule } from './db/db.module';
+import { LoggerModule } from './custom-logger/logging.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -16,6 +18,8 @@ import { DbModule } from './db/db.module';
     AlbumsModule,
     FavoritesModule,
     DbModule,
+    LoggerModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
